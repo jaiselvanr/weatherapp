@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Weather App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        video.bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            filter: brightness(0.6);
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #fff;
+            text-align: center;
+            padding: 0 1rem;
+            overflow-y: auto;
+        }
+        h1 {
+            margin-bottom: 20px;
+            animation: fadeIn 2s ease-in;
+        }
+        form {
+            margin-bottom: 30px;
+            animation: fadeIn 2.5s ease-in;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            width: 250px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            background-color: #ffffff;
+            color: #2980b9;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        /* Style for the location button */
+        #locationBtn {
+            background-color: #3498db;
+            color: white;
+            margin-left: 0;
+            margin-top: 10px;
+            width: 160px;
+        }
+        #locationBtn:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        .weather-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            animation: slideUp 1s ease-out;
+            max-width: 320px;
+            margin: 0 auto 20px auto;
+        }
+        .weather-card img {
+            width: 100px;
+        }
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* Forecast styles */
+        .forecast-container {
+            max-width: 900px;
+            margin: 0 auto 40px auto;
+            text-align: center;
+        }
+        .forecast-container h3 {
+            margin-bottom: 15px;
+        }
+        .forecast-cards {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .forecast-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            width: 120px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .forecast-card img {
+            width: 60px;
+            margin: 5px 0;
+        }
+
+        /* Loading spinner styles */
+        #loadingSpinner {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner {
+          border: 8px solid #f3f3f3;
+          border-top: 8px solid #2980b9;
+          border-radius: 50%;
+          width: 60px;
+          height: 60px;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop class="bg-video">
+        <source src="{{ url_for('static', filename='bg.mp4') }}" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <h1>🌤️ Weather Checker</h1>
+        <form method="POST" id="weatherForm">
+            <input type="text" name="city" placeholder="Enter city name" autocomplete="off" />
+            <input type="hidden" name="lat" id="lat" />
+            <input type="hidden" name="lon" id="lon" />
+            <button type="submit">Get Weather</button><br />
+            <button type="button" id="locationBtn">Use My Location</button>
+        </form>
+
+        {% if weather %}
+            <div class="weather-card">
+                {% if weather.error %}
+                    <p class="error">{{ weather.error }}</p>
+                {% else %}
+                    <h2>{{ weather.city }}</h2>
+                    <img src="http://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="Weather icon" />
+                    <p><strong>{{ weather.temperature }}°C</strong></p>
+                    <p>{{ weather.description.title() }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {% if forecast %}
+            <div class="forecast-container">
+                <h3>7-Day Forecast</h3>
+                <div class="forecast-cards">
+                    {% for day in forecast %}
+                        <div class="forecast-card">
+                            <p><strong>{{ day.dt|datetimeformat }}</strong></p>
+                            <img src="http://openweathermap.org/img/wn/{{ day.weather[0].icon }}@2x.png" alt="Weather icon" />
+                            <p>Day: {{ day.temp.day }}°C</p>
+                            <p>Night: {{ day.temp.night }}°C</p>
+                            <p>{{ day.weather[0].description.title() }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const spinner = document.getElementById('loadingSpinner');
+        const form = document.getElementById('weatherForm');
+
+        form.addEventListener('submit', () => {
+            spinner.style.display = 'flex';
+        });
+
+        window.addEventListener('load', () => {
+            spinner.style.display = 'none';
+        });
+
+        document.getElementById('locationBtn').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        document.getElementById('lat').value = position.coords.latitude;
+                        document.getElementById('lon').value = position.coords.longitude;
+
+                        // Clear city input to avoid conflict
+                        document.querySelector('input[name="city"]').value = '';
+
+                        // Submit form
+                        form.submit();
+                    },
+                    function (error) {
+                        alert('Unable to retrieve your location. Please enter city manually.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        });
+    </script>
+</body>
+</html>
