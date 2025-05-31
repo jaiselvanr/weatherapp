@@ -1,4 +1,7 @@
 Weather Checker Web App 🌤️
+
+
+
 A simple and elegant weather app built with Flask and OpenWeatherMap API that shows current weather by city name or your location. Includes a stylish video background and loading spinner for a smooth user experience.
 
 Features
